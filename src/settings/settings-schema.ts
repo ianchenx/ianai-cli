@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 import { providerType } from '../providers';
 
 export const settingsSchema = z.object({
-  endpoint: z.string().url().default('https://kimi.moonshot.cn/api'),
+  endpoint: z.string().url().optional().default('https://kimi.moonshot.cn/api'),
   metadata: z.record(z.any()).optional(),
   payload: z.record(z.string()).optional(),
   headers: z.record(z.string()).optional(),
@@ -17,7 +17,7 @@ export const settingsSchema = z.object({
     })
     .default({ generate: 1, maxlength: 60, type: '' }),
   proxy: z.string().url().optional(),
-  provider: z.enum(['kimi']).default('kimi')
+  provider: z.enum(['kimi', 'gemini']).default('kimi')
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -38,7 +38,7 @@ export function validateSettings(settings) {
     }
 
     logger.error(
-      `\nPlease check the parameters you’ve provided to ensure they’re correct. Additionally, You can edit your settings file at file://${settingsDir}. If the issue persists, you can reset to default settings by running ai --init.`
+      `\nPlease check the parameters you've provided to ensure they're correct. Additionally, You can edit your settings file at file://${settingsDir}. If the issue persists, you can reset to default settings by running ai --init.`
     );
     process.exit(1);
   }

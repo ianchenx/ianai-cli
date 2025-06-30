@@ -1,10 +1,11 @@
 // 导入其他provider
 
-import { createDeepseekProvider } from './deepseek';
 import { createKimiChat } from './kimi';
+import { createGeminiProvider } from './gemini';
 
 export const providerType = {
-  kimi: 'kimi'
+  kimi: 'kimi',
+  gemini: 'gemini'
 } as const;
 
 export const providerTypeList = Object.values(providerType);
@@ -18,6 +19,9 @@ export const createProvider = async (
   switch (type) {
     case providerType.kimi:
       return await createKimiChat(config);
+
+    case providerType.gemini:
+      return await createGeminiProvider(config);
 
     default:
       throw new Error(`Unknown provider type: ${type}`);

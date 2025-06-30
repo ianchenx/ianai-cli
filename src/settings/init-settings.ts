@@ -27,11 +27,20 @@ export async function initSettings(rl: readline.Interface) {
     providerTypeList
   )) as ProviderType;
 
-  const endpoint =
-    (await askQuestion(rl, 'Enter the API endpoint(default kimi): ')) ||
-    defaultValues.endpoint;
+  let endpoint = '';
+  let authTokenPrompt = '';
 
-  const authorization = await askQuestion(rl, `Enter your auth token: `);
+  if (provider === providerType.gemini) {
+    endpoint = '';
+    authTokenPrompt = 'Enter your Gemini API key: ';
+  } else {
+    endpoint =
+      (await askQuestion(rl, 'Enter the API endpoint(default kimi): ')) ||
+      defaultValues.endpoint;
+    authTokenPrompt = 'Enter your auth token: ';
+  }
+
+  const authorization = await askQuestion(rl, authTokenPrompt);
 
   const headers = await askForCustomObject(rl, 'headers');
 
