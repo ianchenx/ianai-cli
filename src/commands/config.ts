@@ -4,13 +4,25 @@ import { logger } from '../utils/logger';
 import { providerType, ProviderType, providerTypeList } from '../providers';
 import { askQuestion } from '../ask-question';
 import { appContext } from '../app-context';
+import {
+  getICloudStatus,
+  enableICloudSync,
+  disableICloudSync
+} from '../settings/icloud-sync';
 
 export async function configureProvider(provider: ProviderType, rl: any) {
   const config: any = {};
 
   if (provider === providerType.gemini) {
+    const geminiEndpoint = await askQuestion(
+      rl,
+      'Enter the Gemini API endpoint (optional, press Enter for default): '
+    );
     const geminiApiKey = await askQuestion(rl, 'Enter your Gemini API key: ');
-    config.gemini = { apiKey: geminiApiKey };
+    config.gemini = {
+      apiKey: geminiApiKey,
+      ...(geminiEndpoint && { endpoint: geminiEndpoint })
+    };
   } else if (provider === providerType.kimi) {
     const kimiEndpoint =
       (await askQuestion(rl, 'Enter the API endpoint(default kimi): ')) ||
@@ -22,6 +34,55 @@ export async function configureProvider(provider: ProviderType, rl: any) {
   return config;
 }
 
+// iCloud sync management function
+async function manageiCloudSync(action: string, rl: any) {
+  const status = getICloudStatus();
+
+  switch (action) {
+    case 'status':
+      logger.info('🔄 iCloud Sync Status:');
+
+      if (!status.supported) {
+        logger.info(
+          '  ❌ Current system does not support iCloud sync (macOS only)'
+        );
+        return;
+      }
+
+      if (status.enabled) {
+        logger.info('  ✅ iCloud sync is enabled');
+        logger.info(
+          `  📁 Config file location: ${status.iCloudPath}/settings.json`
+        );
+      } else {
+        logger.info('  ❌ iCloud sync is not enabled');
+      }
+
+      if (status.hasLocal) {
+        logger.info(
+          `  📁 Local config file: ${status.localPath}/settings.json`
+        );
+      }
+
+      logger.info(`  📂 Current active directory: ${status.activePath}`);
+      break;
+
+    case 'enable':
+      await enableICloudSync(rl);
+      break;
+
+    case 'disable':
+      await disableICloudSync(rl);
+      break;
+
+    default:
+      logger.info('Available iCloud sync commands:');
+      logger.info('  ai config sync status  - Check sync status');
+      logger.info('  ai config sync enable  - Enable iCloud sync');
+      logger.info('  ai config sync disable - Disable iCloud sync');
+  }
+}
+
 const configCommand = async (
   subcommand: string,
   key?: string,
@@ -29,8 +90,20 @@ const configCommand = async (
 ) => {
   const settings = await getSettings();
 
+  if (subcommand === 'sync') {
+    // iCloud sync management
+    const rl = appContext.rl;
+    if (!rl) {
+      logger.error('Failed to initialize readline interface');
+      process.exit(1);
+    }
+
+    await manageiCloudSync(key || '', rl);
+    return;
+  }
+
   if (subcommand === 'add') {
-    // 添加新的提供商配置
+    // Add new provider configuration
     const rl = appContext.rl;
 
     if (!rl) {
@@ -44,7 +117,7 @@ const configCommand = async (
       providerTypeList
     )) as ProviderType;
 
-    // 检查是否已经配置过该提供商
+    // Check if provider is already configured
     const isAlreadyConfigured =
       (provider === 'gemini' && settings.providers?.gemini?.apiKey) ||
       (provider === 'kimi' && settings.providers?.kimi?.apiKey);
@@ -67,7 +140,7 @@ const configCommand = async (
     try {
       const providerConfig = await configureProvider(provider, rl);
 
-      // 合并配置
+      // Merge configuration
       settings.providers = {
         ...settings.providers,
         ...providerConfig
@@ -76,7 +149,7 @@ const configCommand = async (
       saveSettings(settings);
       logger.success(`✅ Successfully added ${provider} configuration`);
 
-      // 询问是否要切换到新配置的提供商
+      // Ask if user wants to switch to new provider
       if (settings.provider !== provider) {
         const switchNow = await askQuestion(
           rl,
@@ -119,7 +192,7 @@ const configCommand = async (
     saveSettings(settings);
     logger.success(`✅ Switched to ${provider}`);
   } else if (subcommand === 'show') {
-    // 显示当前配置
+    // Show current configuration
     logger.info('Current configuration:');
     logger.info(`Active provider: ${settings.provider}`);
     logger.info('Configured providers:');
@@ -131,7 +204,8 @@ const configCommand = async (
     }
 
     if (settings.providers?.gemini?.apiKey) {
-      logger.info(`  ✅ gemini`);
+      const geminiEndpoint = settings.providers.gemini.endpoint || 'default';
+      logger.info(`  ✅ gemini (${geminiEndpoint})`);
     } else {
       logger.info(`  ❌ gemini (not configured)`);
     }
@@ -140,6 +214,9 @@ const configCommand = async (
     logger.info('  ai config show         - Show current configuration');
     logger.info('  ai config add          - Add a new provider');
     logger.info('  ai config switch <provider> - Switch active provider');
+    logger.info('  ai config sync status  - Check iCloud sync status');
+    logger.info('  ai config sync enable  - Enable iCloud sync');
+    logger.info('  ai config sync disable - Disable iCloud sync');
   }
 };
 

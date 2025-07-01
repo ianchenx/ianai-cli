@@ -25,7 +25,24 @@ program
 
 program
   .command('config <action> [key] [value]')
-  .description('Manage configuration')
+  .description(
+    `Manage configuration
+  
+  Available actions:
+    show                   - Show current configuration
+    add                    - Add a new provider
+    switch <provider>      - Switch active provider
+    sync status            - Check iCloud sync status
+    sync enable            - Enable iCloud sync (macOS only)
+    sync disable           - Disable iCloud sync (macOS only)
+  
+  Examples:
+    ai config show
+    ai config add
+    ai config switch gemini
+    ai config sync status
+    ai config sync enable`
+  )
   .action(async (action, key, value) => {
     await configCommand(action, key, value);
   });

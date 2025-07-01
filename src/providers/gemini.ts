@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI, GoogleGenAIOptions } from '@google/genai';
 import { getSettings } from '../settings/get-settings';
 import { isDebug, logger } from '../utils/logger';
 import { removedJsonPrefix } from '../utils/str';
@@ -10,30 +10,40 @@ export const createGeminiProvider = async (payload: {
   const settings = await getSettings();
 
   const apiKey = settings.providers?.gemini?.apiKey;
+  const endpoint = settings.providers?.gemini?.endpoint;
+
   if (!apiKey) {
     throw new Error(
       'Gemini API key is required. Please run "ai --init" to configure.'
     );
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const config: GoogleGenAIOptions = { apiKey };
+  if (endpoint) {
+    config.httpOptions = {
+      baseUrl: endpoint
+    };
+  }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const ai = new GoogleGenAI(config);
 
   try {
     if (isDebug) {
       logger.info('Sending message to Gemini:', payload.message);
     }
 
-    const result = await model.generateContent(payload.message);
-    const response = await result.response;
-    const text = response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: payload.message
+    });
+
+    const text = response.text;
 
     if (isDebug) {
       logger.info('Gemini response:', text);
     }
 
-    const cleanedResponse = removedJsonPrefix(text);
+    const cleanedResponse = removedJsonPrefix(text || '');
     return safeJsonParse(cleanedResponse);
   } catch (error) {
     if (isDebug) {

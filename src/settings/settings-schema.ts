@@ -15,6 +15,7 @@ export const settingsSchema = z.object({
         .optional(),
       gemini: z
         .object({
+          endpoint: z.string().url().optional(),
           apiKey: z.string()
         })
         .optional()

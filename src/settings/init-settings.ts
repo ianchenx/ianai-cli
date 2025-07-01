@@ -1,17 +1,23 @@
 import fs from 'fs';
 import readline from 'readline';
+import path from 'path';
 
 import { askQuestion } from '../ask-question';
-import { settingsDir, settingsFilePath } from '../constants/settings-constants';
 import { logger } from '../utils/logger';
 import { saveSettings } from './save-settings';
 import { getDefaults, Settings, settingsSchema } from './settings-schema';
 import { select } from '@clack/prompts';
 import { providerType, ProviderType, providerTypeList } from '../providers';
 import { configureProvider } from '../commands/config';
+import { askToEnableICloudSync } from './icloud-sync';
 
 export async function initSettings(rl: readline.Interface) {
-  fs.mkdirSync(settingsDir, { recursive: true });
+  // Use iCloud sync module to ask user if they want to enable iCloud sync
+  const chosenSettingsDir = await askToEnableICloudSync(rl);
+
+  // Ensure directory exists
+  fs.mkdirSync(chosenSettingsDir, { recursive: true });
+
   let settings: Settings = {
     payload: {},
     metadata: {},
@@ -38,15 +44,19 @@ export async function initSettings(rl: readline.Interface) {
   settings.provider = provider;
   settings.commitment = defaultValues.commitment;
 
+  // Save settings to the selected directory
+  const finalSettingsPath = path.join(chosenSettingsDir, 'settings.json');
   logger.info(
-    `Saving settings at ${settingsFilePath}:\n${JSON.stringify(
+    `Saving settings at ${finalSettingsPath}:\n${JSON.stringify(
       settings,
       null,
       2
     )}}`
   );
 
-  saveSettings(settings);
+  // Write directly to the selected directory
+  fs.writeFileSync(finalSettingsPath, JSON.stringify(settings, null, 2));
+
   rl.close();
   process.exit(0);
 }

@@ -1,17 +1,41 @@
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 
 import { schemaDirname } from '../message-response-schema';
+import {
+  getActiveSettingsDir,
+  getSettingsFilePath,
+  getICloudStatus
+} from '../settings/icloud-sync';
 
-const homeDir = os.homedir();
-const cpuArchitecture = os.arch();
-const osPlatform = os.platform();
-const osType = os.type();
-const kernelVersion = os.version();
-export const settingsDir = `${homeDir}/.ianai`;
+const cpuArchitecture = process.arch;
+const osPlatform = process.platform;
+const osType = process.platform;
+const kernelVersion = process.version;
+
+// Use iCloud sync module to get settings directory
+export const settingsDir = getActiveSettingsDir();
 export const settingsFileName = `settings.json`;
 export const settingsFilePath = `${settingsDir}/${settingsFileName}`;
+
+// Compatibility function: get settings file path based on specified directory
+export function getSettingsFilePathCompat(directory?: string): string {
+  return getSettingsFilePath(directory);
+}
+
+// Compatibility function: get all possible settings directories
+export function getAvailableSettingsDirs(): { local: string; icloud?: string } {
+  const status = getICloudStatus();
+  const result: { local: string; icloud?: string } = {
+    local: status.localPath
+  };
+
+  if (status.supported) {
+    result.icloud = status.iCloudPath;
+  }
+
+  return result;
+}
 
 const schemaString = fs.readFileSync(
   path.join(schemaDirname, 'command-response-schema.ts'),
