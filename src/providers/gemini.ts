@@ -9,10 +9,11 @@ export const createGeminiProvider = async (payload: {
 }): Promise<string> => {
   const settings = await getSettings();
 
-  // 从 headers.authorization 中获取 API Key
-  const apiKey = settings.headers?.authorization;
+  const apiKey = settings.providers?.gemini?.apiKey;
   if (!apiKey) {
-    throw new Error('Gemini API key is required in authorization header');
+    throw new Error(
+      'Gemini API key is required. Please run "ai --init" to configure.'
+    );
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);

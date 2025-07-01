@@ -24,7 +24,7 @@ program
   .option('--init', 'Initialize settings');
 
 program
-  .command('config <action> <key> [value]')
+  .command('config <action> [key] [value]')
   .description('Manage configuration')
   .action(async (action, key, value) => {
     await configCommand(action, key, value);

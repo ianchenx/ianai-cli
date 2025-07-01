@@ -12,12 +12,11 @@ import { providerType, ProviderType, providerTypeList } from '../providers';
 export async function initSettings(rl: readline.Interface) {
   fs.mkdirSync(settingsDir, { recursive: true });
   let settings: Settings = {
-    endpoint: '',
     payload: {},
-    headers: {},
     metadata: {},
     commitment: { type: '' },
-    provider: providerType.kimi
+    provider: providerType.kimi,
+    providers: {}
   };
   const defaultValues = getDefaults(settingsSchema);
 
@@ -27,28 +26,21 @@ export async function initSettings(rl: readline.Interface) {
     providerTypeList
   )) as ProviderType;
 
-  let endpoint = '';
-  let authTokenPrompt = '';
-
   if (provider === providerType.gemini) {
-    endpoint = '';
-    authTokenPrompt = 'Enter your Gemini API key: ';
-  } else {
-    endpoint =
+    const geminiApiKey = await askQuestion(rl, 'Enter your Gemini API key: ');
+    settings.providers.gemini = { apiKey: geminiApiKey };
+  } else if (provider === providerType.kimi) {
+    const kimiEndpoint =
       (await askQuestion(rl, 'Enter the API endpoint(default kimi): ')) ||
-      defaultValues.endpoint;
-    authTokenPrompt = 'Enter your auth token: ';
+      'https://kimi.moonshot.cn/api';
+    const kimiApiKey = await askQuestion(rl, 'Enter your Kimi auth token: ');
+    settings.providers.kimi = { endpoint: kimiEndpoint, apiKey: kimiApiKey };
   }
 
-  const authorization = await askQuestion(rl, authTokenPrompt);
-
-  const headers = await askForCustomObject(rl, 'headers');
+  const additionalHeaders = await askForCustomObject(rl, 'additional headers');
 
   settings.provider = provider;
-  settings.endpoint = endpoint;
   settings.commitment = defaultValues.commitment;
-
-  settings.headers = { ...headers, authorization };
 
   logger.info(
     `Saving settings at ${settingsFilePath}:\n${JSON.stringify(

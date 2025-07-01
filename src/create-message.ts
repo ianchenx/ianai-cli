@@ -26,9 +26,20 @@ export async function createMessage<T>({
     process.exit(1);
   }
 
-  if (!settings.headers!.authorization) {
+  const currentProvider = settings.provider;
+  let isConfigured = false;
+
+  if (currentProvider === 'kimi') {
+    isConfigured = !!(
+      settings.providers?.kimi?.apiKey && settings.providers?.kimi?.endpoint
+    );
+  } else if (currentProvider === 'gemini') {
+    isConfigured = !!settings.providers?.gemini?.apiKey;
+  }
+
+  if (!isConfigured) {
     logger.error(
-      'AuthToken is required. Please run `ai --init` or `ai config set authToken <your-auth-token>` to set the authorization.'
+      `${currentProvider} is not configured. Please run "ai --init" to configure.`
     );
     process.exit(1);
   }

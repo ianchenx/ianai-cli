@@ -5,10 +5,24 @@ import { logger } from '../utils/logger';
 import { providerType } from '../providers';
 
 export const settingsSchema = z.object({
-  endpoint: z.string().url().optional().default('https://kimi.moonshot.cn/api'),
+  providers: z
+    .object({
+      kimi: z
+        .object({
+          endpoint: z.string().url().default('https://kimi.moonshot.cn/api'),
+          apiKey: z.string()
+        })
+        .optional(),
+      gemini: z
+        .object({
+          apiKey: z.string()
+        })
+        .optional()
+    })
+    .default({}),
+
   metadata: z.record(z.any()).optional(),
   payload: z.record(z.string()).optional(),
-  headers: z.record(z.string()).optional(),
   commitment: z
     .object({
       generate: z.number().max(10).optional(),

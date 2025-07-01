@@ -1,4 +1,3 @@
-import { getHeaders } from '../settings/get-headers';
 import { getSettings } from '../settings/get-settings';
 
 import axios from 'axios';
@@ -34,6 +33,15 @@ export const createKimiChat = async (payload: {
 }): Promise<string> => {
   const settings = await getSettings();
 
+  const endpoint = settings.providers?.kimi?.endpoint;
+  const apiKey = settings.providers?.kimi?.apiKey;
+
+  if (!apiKey || !endpoint) {
+    throw new Error(
+      'Kimi API configuration is required. Please run "ai --init" to configure.'
+    );
+  }
+
   const chatConfig: KimiChatPayload = {
     name: 'new chat',
     is_example: false,
@@ -42,8 +50,8 @@ export const createKimiChat = async (payload: {
   };
 
   const initializeChat = async (): Promise<string> => {
-    const response = await axios.post(`${settings.endpoint}/chat`, chatConfig, {
-      headers: getHeaders(settings)
+    const response = await axios.post(`${endpoint}/chat`, chatConfig, {
+      headers: { authorization: apiKey }
     });
     return response.data.id;
   };
@@ -63,11 +71,11 @@ export const createKimiChat = async (payload: {
     };
 
     const response = await axios.post(
-      `${settings.endpoint}/chat/${chatId}/completion/stream`,
+      `${endpoint}/chat/${chatId}/completion/stream`,
       messagePayload,
       {
         responseType: 'stream',
-        headers: getHeaders(settings)
+        headers: { authorization: apiKey }
       }
     );
 
