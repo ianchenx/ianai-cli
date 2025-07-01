@@ -8,6 +8,7 @@ import { saveSettings } from './save-settings';
 import { getDefaults, Settings, settingsSchema } from './settings-schema';
 import { select } from '@clack/prompts';
 import { providerType, ProviderType, providerTypeList } from '../providers';
+import { configureProvider } from '../commands/config';
 
 export async function initSettings(rl: readline.Interface) {
   fs.mkdirSync(settingsDir, { recursive: true });
@@ -26,16 +27,11 @@ export async function initSettings(rl: readline.Interface) {
     providerTypeList
   )) as ProviderType;
 
-  if (provider === providerType.gemini) {
-    const geminiApiKey = await askQuestion(rl, 'Enter your Gemini API key: ');
-    settings.providers.gemini = { apiKey: geminiApiKey };
-  } else if (provider === providerType.kimi) {
-    const kimiEndpoint =
-      (await askQuestion(rl, 'Enter the API endpoint(default kimi): ')) ||
-      'https://kimi.moonshot.cn/api';
-    const kimiApiKey = await askQuestion(rl, 'Enter your Kimi auth token: ');
-    settings.providers.kimi = { endpoint: kimiEndpoint, apiKey: kimiApiKey };
-  }
+  const providerConfig = await configureProvider(provider, rl);
+  settings.providers = {
+    ...settings.providers,
+    ...providerConfig
+  };
 
   const additionalHeaders = await askForCustomObject(rl, 'additional headers');
 
