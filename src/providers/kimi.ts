@@ -10,6 +10,7 @@ interface KimiChatPayload {
   is_example: boolean;
   enter_method: string;
   kimiplus_id: string;
+  model: string;
 }
 
 interface KimiRequestMessage {
@@ -26,6 +27,7 @@ interface KimiRequestMessage {
   use_math: boolean;
   refs: any[];
   refs_file: any[];
+  model: string;
 }
 
 export const createKimiChat = async (payload: {
@@ -46,7 +48,8 @@ export const createKimiChat = async (payload: {
     name: 'new chat',
     is_example: false,
     enter_method: 'new_chat',
-    kimiplus_id: 'kimi'
+    kimiplus_id: 'kimi',
+    model: 'k2'
   };
 
   const initializeChat = async (): Promise<string> => {
@@ -67,7 +70,8 @@ export const createKimiChat = async (payload: {
       use_research: false,
       use_math: false,
       refs: [],
-      refs_file: []
+      refs_file: [],
+      model: 'k2'
     };
 
     const response = await axios.post(
